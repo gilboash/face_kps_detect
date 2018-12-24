@@ -18,13 +18,9 @@ from sklearn.utils import shuffle
 
 
 
-EPOCHS = 1
-FTRAIN = 'data/face_kps/training.csv'
 FTEST = 'data/face_kps/test.csv'
-LEARNING_RATE = 0.001
-
-DEBUG = 0
-PLOT = 0
+MODEL = 'data/weights.pt'
+PLOT = 1
 
 
 class FaceLandmarksDataset(Dataset):
@@ -94,66 +90,15 @@ def plot_sample(x, y, axis):
         axis.imshow(img, cmap='gray')
         axis.scatter(y[0::2] * 48 + 48, y[1::2] * 48 + 48, marker='x', s=10)
 
-def plot_face_kps_16_batch(face_dataset,starting_idx):
-    fig = plt.figure()
-    fig = plt.figure(figsize=(6, 6))
-    fig.subplots_adjust(
-            left=0, right=1, bottom=0, top=1, hspace=0.05, wspace=0.05)
-
-    for i in range(16):#len(face_dataset)):
-        sample = face_dataset[i]
-
-        print(i, sample['image'].shape, sample['landmarks'].shape)
-
-        ax = fig.add_subplot(4, 4, i + 1, xticks=[], yticks=[])
-        plot_sample(sample['image'], sample['landmarks'], ax)
-    plt.show()
-
-face_dataset = FaceLandmarksDataset(csv_file=FTRAIN,
-                                    root_dir='data/faces/')
-
-net = Net()
-
-criterion = nn.MSELoss(reduction='sum')
-optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE, momentum=0.9)
-#train
-for epoch in range(EPOCHS):  # loop over the dataset multiple times
-
-    running_loss = 0.0
-    for i, data in enumerate(face_dataset):
-        # get the inputs
-        #inputs, labels = data
-
-        # zero the parameter gradients
-        optimizer.zero_grad()
-
-        # forward + backward + optimize
-        resized_input = data['image'].reshape(-1, 1, 96, 96)
-        _tensor = torch.from_numpy(resized_input)
-
-        outputs = net(_tensor)
-        resized_exp = torch.from_numpy(data['landmarks']).reshape(1,30)
-        if DEBUG==1:
-            print (outputs)
-            print (outputs.shape)
-            print (outputs.dtype)
-            print (resized_exp)
-            print (resized_exp.shape)
-            print (resized_exp.dtype)
-        loss = criterion(outputs, resized_exp)
-        loss.backward()
-        optimizer.step()
-
-        # print statistics
-        running_loss += loss.item()
-        if i % 2000 == 1999:    # print every 2000 mini-batches
-            print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, running_loss / 2000))
-            running_loss = 0.0
-
 
 face_dataset_test = FaceLandmarksDataset(csv_file=FTEST,
                                     root_dir='data/faces/')
+net = Net()
+
+net = torch.load(MODEL)
+net.eval()
+
+
 #start running model
 #from some reason, test.csv doesnt have output labels. thats weird, should further look into it
 if PLOT==1:
@@ -183,9 +128,6 @@ with torch.no_grad():
 
 if PLOT==1:
     plt.show()
-#print('Accuracy of the network on the 10000 test images: %d %%' % (
-#    100 * correct / total))
-torch.save(net, 'data/weights.pt')
 
 sys.exit(1)
 
