@@ -18,7 +18,7 @@ from sklearn.utils import shuffle
 
 
 
-from face_detection_net import Net, Net_Train ,SPECIALIST_SETTINGS
+from face_detection_net import Net, Net_Train , run_subsets
 from face_detection_dataset import FaceLandmarksDataset
 from utils import plot_sample, plot_face_kps_16_batch
 import utils
@@ -26,10 +26,6 @@ import utils
 
 face_dataset_test = FaceLandmarksDataset(csv_file=utils.FTEST,
                                     root_dir='data/faces/')
-net = Net()
-
-net = torch.load(utils.MODEL)
-net.eval()
 
 
 #start running model
@@ -46,7 +42,8 @@ with torch.no_grad():
         resized_input = data['image'].reshape(-1, 1, 96, 96)
         _tensor = torch.from_numpy(resized_input)
 
-        outputs = net(_tensor)
+        #outputs = net(_tensor)
+        outputs = run_subsets(_tensor,settings=utils.SETTINGS,load_from_file=True)
         if plot_index<16:   
             ax = fig.add_subplot(4, 4,plot_index+ 1, xticks=[], yticks=[])
             with torch.no_grad():

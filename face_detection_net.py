@@ -55,14 +55,14 @@ def adjust_learning_rate(optimizer, epoch,init_lr=utils.LEARNING_RATE,init_momen
     print "lr is %f mem is %f" %(lr,momentum)
     return lr, momentum
 
-def Net_Train(net,cols=None,target_pt_fn=None):
+def Net_Train(net,cols=None,target_pt_fn=None,flip_indices=None, num_output_units=30):
 
     face_dataset = FaceLandmarksDataset(csv_file=utils.FTRAIN,
                                         root_dir='data/faces/',cols=cols)
 
     face_datase_trans = FaceLandmarksDataset(csv_file=utils.FTRAIN,
                                         root_dir='data/faces/',
-                                        transform=FlipHorizontal(),cols=cols)
+                                        transform=FlipHorizontal(flip_indices=flip_indices),cols=cols)
 
     criterion = nn.MSELoss(reduction='sum')
     optimizer = optim.SGD(net.parameters(), lr=utils.LEARNING_RATE, momentum=0.9)
@@ -88,7 +88,7 @@ def Net_Train(net,cols=None,target_pt_fn=None):
             _tensor = torch.from_numpy(resized_input)
 
             outputs = net(_tensor)
-            resized_exp = torch.from_numpy(data['landmarks']).reshape(1,30)
+            resized_exp = torch.from_numpy(data['landmarks']).reshape(1,num_output_units)
             if utils.DEBUG==1:
                 print (outputs)
                 print (outputs.shape)
@@ -111,12 +111,60 @@ def Net_Train(net,cols=None,target_pt_fn=None):
         torch.save(net, target_pt_fn )
 
 
+def train_subsets(settings=None):
+
+    if settings==None:
+        net = Net()
+        Net_Train(net,target_pt_fn=utils.MODEL)
+        specialists=net
+    else:
+        specialists = OrderedDict()
+        for setting in settings:
+            cols = setting['columns']
+            model = Net(setting['num_ele'])
+            #max_epochs = int(1e7 / Net(setting['num_ele'])
+
+            weight_fn = "data/weights%d.pt" %setting['unique_id']
+            Net_Train(model,cols=cols,target_pt_fn=weight_fn, flip_indices=setting['flip_indices'], num_output_units=setting['num_ele'])
+            #model.fit(X, y)
+            specialists[cols] = model
+
+    return specialists
+
+def run_subsets(_tensor,specialists=None,settings=None,load_from_file=False):
+    if settings==None:
+        if load_from_file==True:
+            weight_fn = utils.MODEL 
+            net = torch.load(weight_fn)
+            net.eval()
+        else:
+            net = specialists 
+        outputs = net(_tensor)
+    else:
+        outputs = []
+        for setting in settings:
+            cols = setting['columns']
+            #max_epochs = int(1e7 / Net(setting['num_ele'])
+
+            if load_from_file==True:
+                weight_fn = "data/weights%d.pt" %setting['unique_id']
+                net = torch.load(weight_fn)
+                net.eval()
+            else:
+                net = specialists[cols] 
+
+            outputs.append(net(_tensor))
+
+    return outputs
+        
 SPECIALIST_SETTINGS = [
     dict(
         columns=(
             'left_eye_center_x', 'left_eye_center_y',
             'right_eye_center_x', 'right_eye_center_y',
             ),
+        num_ele=4,
+        unique_id=1,
         flip_indices=((0, 2), (1, 3)),
         ),
 
@@ -124,6 +172,8 @@ SPECIALIST_SETTINGS = [
         columns=(
             'nose_tip_x', 'nose_tip_y',
             ),
+        num_ele=2,
+        unique_id=2,
         flip_indices=(),
         ),
 
@@ -133,6 +183,8 @@ SPECIALIST_SETTINGS = [
             'mouth_right_corner_x', 'mouth_right_corner_y',
             'mouth_center_top_lip_x', 'mouth_center_top_lip_y',
             ),
+        num_ele=6,
+        unique_id=3,
         flip_indices=((0, 2), (1, 3)),
         ),
 
@@ -141,6 +193,8 @@ SPECIALIST_SETTINGS = [
             'mouth_center_bottom_lip_x',
             'mouth_center_bottom_lip_y',
             ),
+        num_ele=2,
+        unique_id=4,
         flip_indices=(),
         ),
 
@@ -151,6 +205,8 @@ SPECIALIST_SETTINGS = [
             'left_eye_outer_corner_x', 'left_eye_outer_corner_y',
             'right_eye_outer_corner_x', 'right_eye_outer_corner_y',
             ),
+        num_ele=8,
+        unique_id=5,
         flip_indices=((0, 2), (1, 3), (4, 6), (5, 7)),
         ),
 
@@ -161,6 +217,8 @@ SPECIALIST_SETTINGS = [
             'left_eyebrow_outer_end_x', 'left_eyebrow_outer_end_y',
             'right_eyebrow_outer_end_x', 'right_eyebrow_outer_end_y',
             ),
+        num_ele=8,
+        unique_id=6,
         flip_indices=((0, 2), (1, 3), (4, 6), (5, 7)),
         ),
     ]

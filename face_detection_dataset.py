@@ -33,7 +33,7 @@ class FaceLandmarksDataset(Dataset):
         self.landmarks_frame = read_csv(os.path.expanduser(csv_file))
         self.landmarks_frame['Image'] = self.landmarks_frame['Image'].apply(lambda im: np.fromstring(im, sep=' '))
         if cols:  # get a subset of columns
-            df = df[list(cols) + ['Image']]
+            self.landmarks_frame = self.landmarks_frame[list(cols) + ['Image']]
         print(self.landmarks_frame.count())  # prints the number of values for each column
         self.landmarks_frame = self.landmarks_frame.dropna()  # drop all rows that have missing values in them
 

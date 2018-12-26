@@ -9,14 +9,14 @@ from nolearn.lasagne import BatchIterator
 
 
 
-EPOCHS = 5
+EPOCHS = 1
 FTRAIN = 'data/face_kps/training.csv'
 FTEST = 'data/face_kps/test.csv'
 MODEL = 'data/weights.pt'
 LEARNING_RATE = 0.001
 ADJUST_LEARNING_RATE = 0
 ALLOW_TRANSFORMS = 0
-
+SETTINGS=None#SPECIALIST_SETTINGS
 DEBUG = 0
 PLOT = 0
 

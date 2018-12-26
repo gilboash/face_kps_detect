@@ -36,8 +36,12 @@ class FlipHorizontal(object):
         (12, 16), (13, 17), (14, 18), (15, 19),
         (22, 24), (23, 25),
         ]
-    def __init__(self, flip_indices=flip_indices_default):
-        self.flip_indices=flip_indices
+    def __init__(self, flip_indices=None):
+        if flip_indices==None:
+            self.flip_indices=self.flip_indices_default
+        else:
+            self.flip_indices = flip_indices
+
 
 
     def __call__(self, sample):
