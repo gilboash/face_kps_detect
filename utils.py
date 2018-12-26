@@ -8,15 +8,82 @@ from skimage import io, transform
 from nolearn.lasagne import BatchIterator
 
 
+SPECIALIST_SETTINGS = [
+    dict(
+        columns=(
+            'left_eye_center_x', 'left_eye_center_y',
+            'right_eye_center_x', 'right_eye_center_y',
+            ),
+        num_ele=4,
+        unique_id=1,
+        flip_indices=((0, 2), (1, 3)),
+        ),
 
-EPOCHS = 1
+    dict(
+        columns=(
+            'nose_tip_x', 'nose_tip_y',
+            ),
+        num_ele=2,
+        unique_id=2,
+        flip_indices=(),
+        ),
+
+    dict(
+        columns=(
+            'mouth_left_corner_x', 'mouth_left_corner_y',
+            'mouth_right_corner_x', 'mouth_right_corner_y',
+            'mouth_center_top_lip_x', 'mouth_center_top_lip_y',
+            ),
+        num_ele=6,
+        unique_id=3,
+        flip_indices=((0, 2), (1, 3)),
+        ),
+
+    dict(
+        columns=(
+            'mouth_center_bottom_lip_x',
+            'mouth_center_bottom_lip_y',
+            ),
+        num_ele=2,
+        unique_id=4,
+        flip_indices=(),
+        ),
+
+    dict(
+        columns=(
+            'left_eye_inner_corner_x', 'left_eye_inner_corner_y',
+            'right_eye_inner_corner_x', 'right_eye_inner_corner_y',
+            'left_eye_outer_corner_x', 'left_eye_outer_corner_y',
+            'right_eye_outer_corner_x', 'right_eye_outer_corner_y',
+            ),
+        num_ele=8,
+        unique_id=5,
+        flip_indices=((0, 2), (1, 3), (4, 6), (5, 7)),
+        ),
+
+    dict(
+        columns=(
+            'left_eyebrow_inner_end_x', 'left_eyebrow_inner_end_y',
+            'right_eyebrow_inner_end_x', 'right_eyebrow_inner_end_y',
+            'left_eyebrow_outer_end_x', 'left_eyebrow_outer_end_y',
+            'right_eyebrow_outer_end_x', 'right_eyebrow_outer_end_y',
+            ),
+        num_ele=8,
+        unique_id=6,
+        flip_indices=((0, 2), (1, 3), (4, 6), (5, 7)),
+        ),
+    ]
+
+
+
+EPOCHS = 5
 FTRAIN = 'data/face_kps/training.csv'
 FTEST = 'data/face_kps/test.csv'
 MODEL = 'data/weights.pt'
 LEARNING_RATE = 0.001
 ADJUST_LEARNING_RATE = 0
 ALLOW_TRANSFORMS = 0
-SETTINGS=None#SPECIALIST_SETTINGS
+SETTINGS=None#SPECIALIST_SETTINGS#None
 DEBUG = 0
 PLOT = 0
 
@@ -43,11 +110,6 @@ def plot_face_kps_16_batch(face_dataset,starting_idx):
         ax = fig.add_subplot(4, 4, i + 1, xticks=[], yticks=[])
         plot_sample(sample['image'], sample['landmarks'], ax)
     plt.show()
-
-
-
-
-
 
 
 

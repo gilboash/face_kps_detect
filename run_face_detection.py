@@ -42,20 +42,20 @@ with torch.no_grad():
         resized_input = data['image'].reshape(-1, 1, 96, 96)
         _tensor = torch.from_numpy(resized_input)
 
-        #outputs = net(_tensor)
         outputs = run_subsets(_tensor,settings=utils.SETTINGS,load_from_file=True)
         if plot_index<16:   
             ax = fig.add_subplot(4, 4,plot_index+ 1, xticks=[], yticks=[])
             with torch.no_grad():
                 plot_sample(data['image'],(outputs).reshape(30,1) , ax)
             plot_index=plot_index+1
+        else:
+            plt.show()
         #resized_exp = torch.from_numpy(data['landmarks']).reshape(1,30)
 
         #_, predicted = torch.max(outputs.data, 1)
         #total += resized_exp.size(0)
         #correct += (predicted == resized_exp).sum().item()
 
-plt.show()
 
 sys.exit(1)
 

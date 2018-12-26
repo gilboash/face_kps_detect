@@ -21,7 +21,6 @@ from pandas.io.parsers import read_csv
 from sklearn.utils import shuffle
 from skimage import io, transform
 from nolearn.lasagne import BatchIterator
-from collections import OrderedDict
 
 from face_detection_net import Net, Net_Train , train_subsets, run_subsets
 from face_detection_dataset import FaceLandmarksDataset

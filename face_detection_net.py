@@ -10,6 +10,7 @@ import torch.utils.data as data
 import torch.nn.functional as F
 
 import random
+from collections import OrderedDict
 
 from face_detection_dataset import FaceLandmarksDataset
 from face_detection_transforms import FlipHorizontal,Rescale,RandomCrop,ToTensor,NoneTransform
@@ -118,7 +119,7 @@ def train_subsets(settings=None):
         Net_Train(net,target_pt_fn=utils.MODEL)
         specialists=net
     else:
-        specialists = OrderedDict()
+        specialists =  OrderedDict()
         for setting in settings:
             cols = setting['columns']
             model = Net(setting['num_ele'])
@@ -141,7 +142,7 @@ def run_subsets(_tensor,specialists=None,settings=None,load_from_file=False):
             net = specialists 
         outputs = net(_tensor)
     else:
-        outputs = []
+        outputs = torch.Tensor(0,0)
         for setting in settings:
             cols = setting['columns']
             #max_epochs = int(1e7 / Net(setting['num_ele'])
@@ -153,76 +154,10 @@ def run_subsets(_tensor,specialists=None,settings=None,load_from_file=False):
             else:
                 net = specialists[cols] 
 
-            outputs.append(net(_tensor))
-
+            outputs = torch.cat((outputs,net(_tensor)),1)
+         
     return outputs
         
-SPECIALIST_SETTINGS = [
-    dict(
-        columns=(
-            'left_eye_center_x', 'left_eye_center_y',
-            'right_eye_center_x', 'right_eye_center_y',
-            ),
-        num_ele=4,
-        unique_id=1,
-        flip_indices=((0, 2), (1, 3)),
-        ),
-
-    dict(
-        columns=(
-            'nose_tip_x', 'nose_tip_y',
-            ),
-        num_ele=2,
-        unique_id=2,
-        flip_indices=(),
-        ),
-
-    dict(
-        columns=(
-            'mouth_left_corner_x', 'mouth_left_corner_y',
-            'mouth_right_corner_x', 'mouth_right_corner_y',
-            'mouth_center_top_lip_x', 'mouth_center_top_lip_y',
-            ),
-        num_ele=6,
-        unique_id=3,
-        flip_indices=((0, 2), (1, 3)),
-        ),
-
-    dict(
-        columns=(
-            'mouth_center_bottom_lip_x',
-            'mouth_center_bottom_lip_y',
-            ),
-        num_ele=2,
-        unique_id=4,
-        flip_indices=(),
-        ),
-
-    dict(
-        columns=(
-            'left_eye_inner_corner_x', 'left_eye_inner_corner_y',
-            'right_eye_inner_corner_x', 'right_eye_inner_corner_y',
-            'left_eye_outer_corner_x', 'left_eye_outer_corner_y',
-            'right_eye_outer_corner_x', 'right_eye_outer_corner_y',
-            ),
-        num_ele=8,
-        unique_id=5,
-        flip_indices=((0, 2), (1, 3), (4, 6), (5, 7)),
-        ),
-
-    dict(
-        columns=(
-            'left_eyebrow_inner_end_x', 'left_eyebrow_inner_end_y',
-            'right_eyebrow_inner_end_x', 'right_eyebrow_inner_end_y',
-            'left_eyebrow_outer_end_x', 'left_eyebrow_outer_end_y',
-            'right_eyebrow_outer_end_x', 'right_eyebrow_outer_end_y',
-            ),
-        num_ele=8,
-        unique_id=6,
-        flip_indices=((0, 2), (1, 3), (4, 6), (5, 7)),
-        ),
-    ]
-
 
 
 
