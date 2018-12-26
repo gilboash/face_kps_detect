@@ -17,6 +17,7 @@ from pandas.io.parsers import read_csv
 from sklearn.utils import shuffle
 
 
+from face_detection_net import Net
 
 FTEST = 'data/face_kps/test.csv'
 MODEL = 'data/weights.pt'
@@ -62,28 +63,6 @@ class FaceLandmarksDataset(Dataset):
 
         return sample
 
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, 3)
-        self.pool1 = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(32, 64, 2)
-        self.pool2 = nn.MaxPool2d(2, 2)
-        self.conv3 = nn.Conv2d(64, 128, 2)
-        self.pool3 = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(128 * 11 * 11, 500)
-        self.fc2 = nn.Linear(500, 500)
-        self.fc3 = nn.Linear(500, 30)
-
-    def forward(self, x):
-        x = self.pool1(F.relu(self.conv1(x)))
-        x = self.pool2(F.relu(self.conv2(x)))
-        x = self.pool3(F.relu(self.conv3(x)))
-        x = x.view(-1, 128 * 11 * 11)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
 
 def plot_sample(x, y, axis):
         img = x.reshape(96, 96)

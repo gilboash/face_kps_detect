@@ -21,7 +21,7 @@ from sklearn.utils import shuffle
 from skimage import io, transform
 from nolearn.lasagne import BatchIterator
 
-
+from face_detection_net import Net, SPECIALIST_SETTINGS
 
 
 EPOCHS = 5
@@ -32,6 +32,11 @@ LEARNING_RATE = 0.001
 DEBUG = 0
 PLOT = 0
 
+
+#todo
+#1 - handle partial labels training. potientially adding confidence level for each label value?
+#2 - once 1 is done, start training with crop transform, and crop and scale transforms
+#3 - arrange methods and classes in seperate classes, unify routines from train and run
 class NoneTransform(object):
     def __call__(self, sample):
         Xb, yb = sample['image'], sample['landmarks']
@@ -206,28 +211,6 @@ class FaceLandmarksDataset(Dataset):
 
         return sample
 
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, 3)
-        self.pool1 = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(32, 64, 2)
-        self.pool2 = nn.MaxPool2d(2, 2)
-        self.conv3 = nn.Conv2d(64, 128, 2)
-        self.pool3 = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(128 * 11 * 11, 500)
-        self.fc2 = nn.Linear(500, 500)
-        self.fc3 = nn.Linear(500, 30)
-
-    def forward(self, x):
-        x = self.pool1(F.relu(self.conv1(x)))
-        x = self.pool2(F.relu(self.conv2(x)))
-        x = self.pool3(F.relu(self.conv3(x)))
-        x = x.view(-1, 128 * 11 * 11)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
 
 def plot_sample(x, y, axis, reshape=True):
         if reshape==True:
@@ -251,6 +234,43 @@ def plot_face_kps_16_batch(face_dataset,starting_idx):
         ax = fig.add_subplot(4, 4, i + 1, xticks=[], yticks=[])
         plot_sample(sample['image'], sample['landmarks'], ax)
     plt.show()
+
+def adjust_learning_rate(optimizer, epoch,init_lr=LEARNING_RATE,init_momentum=0.9):
+    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    lr = init_lr * (0.9 ** (epoch // 1))
+    momentum = init_momentum * (1.01 ** (epoch // 1))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+        param_group['momentum'] = momentum
+    print "lr is %f mem is %f" %(lr,momentum)
+    return lr, momentum
+
+
+def fit_specialists():
+    specialists = OrderedDict()
+
+    for setting in SPECIALIST_SETTINGS:
+        cols = setting['columns']
+        X, y = load2d(cols=cols)
+
+        model = clone(net)
+        model.output_num_units = y.shape[1]
+        model.batch_iterator_train.flip_indices = setting['flip_indices']
+        # set number of epochs relative to number of training examples:
+        model.max_epochs = int(1e7 / y.shape[0])
+        if 'kwargs' in setting:
+            # an option 'kwargs' in the settings list may be used to
+            # set any other parameter of the net:
+            vars(model).update(setting['kwargs'])
+
+        print("Training model for columns {} for {} epochs".format(
+            cols, model.max_epochs))
+        model.fit(X, y)
+        specialists[cols] = model
+
+    with open('net-specialists.pickle', 'wb') as f:
+        # we persist a dictionary with all models:
+        pickle.dump(specialists, f, -1)
 
 if __name__== "__main__":
     face_dataset = FaceLandmarksDataset(csv_file=FTRAIN,
@@ -291,11 +311,12 @@ if __name__== "__main__":
     criterion = nn.MSELoss(reduction='sum')
     optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE, momentum=0.9)
 
+    lr, momentum = adjust_learning_rate(optimizer,0,init_lr=LEARNING_RATE,init_momentum=0.9)
     print "Start training! num ephocs %d size of dataset %d" %(EPOCHS,len(face_dataset))
     #train
     for epoch in range(EPOCHS):  # loop over the dataset multiple times
-
         running_loss = 0.0
+        lr, momentum = adjust_learning_rate(optimizer,epoch,init_lr=lr,init_momentum=momentum)
         for i, data in enumerate(face_dataset):
             # get the inputs
             #inputs, labels = data
