@@ -80,6 +80,8 @@ EPOCHS = 300
 FTRAIN = 'data/face_kps/training.csv'
 FTEST = 'data/face_kps/test.csv'
 MODEL = 'data/weights.pt'
+FLOOKUP = 'data/IdLookupTable.csv'
+
 LEARNING_RATE = 0.001
 ADJUST_LEARNING_RATE = 0
 ALLOW_TRANSFORMS = 1

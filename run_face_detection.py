@@ -14,8 +14,9 @@ import os
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from pandas.io.parsers import read_csv
+from pandas import DataFrame
 from sklearn.utils import shuffle
-
+from datetime import datetime
 
 
 from face_detection_net import Net, Net_Train , run_subsets
@@ -38,24 +39,46 @@ plot_index=0
 #correct = 0
 #total = 0
 with torch.no_grad():
+    output_list = []
+    numpy_out = np.empty((len(face_dataset_test), 0))
     for data in face_dataset_test:
         resized_input = data['image'].reshape(-1, 1, 96, 96)
         _tensor = torch.from_numpy(resized_input)
 
         outputs = run_subsets(_tensor,settings=utils.SETTINGS,load_from_file=True)
+
+        this_output = outputs.numpy() 
+        numpy_out =  this_output[0] * 48 + 48
+        numpy_out = numpy_out.clip(0, 96)
+        output_list.append(this_output[0])
         if plot_index<16:   
             ax = fig.add_subplot(4, 4,plot_index+ 1, xticks=[], yticks=[])
             with torch.no_grad():
                 plot_sample(data['image'],(outputs).reshape(30,1) , ax)
             plot_index=plot_index+1
-        else:
-            plt.show()
-        #resized_exp = torch.from_numpy(data['landmarks']).reshape(1,30)
 
-        #_, predicted = torch.max(outputs.data, 1)
-        #total += resized_exp.size(0)
-        #correct += (predicted == resized_exp).sum().item()
+    
+    #plt.show()
+    columns = ()
+    for cols in utils.SPECIALIST_SETTINGS:
+        columns += cols['columns']
+    print columns.index('mouth_left_corner_x')
+    #df = DataFrame(numpy_out, columns=columns)
 
+    lookup_table = read_csv(utils.FLOOKUP)
+    values = []
+
+    for index, row in lookup_table.iterrows():
+        values.append((
+            row['RowId'],
+            output_list[row.ImageId - 1][columns.index(row.FeatureName)],
+            ))
+
+    now_str = datetime.now().isoformat().replace(':', '-')
+    submission = DataFrame(values, columns=('RowId', 'Location'))
+    filename = 'submission-{}.csv'.format(now_str)
+    submission.to_csv(filename, index=False)
+    print("Wrote {}".format(filename))
 
 sys.exit(1)
 
