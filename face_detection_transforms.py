@@ -132,20 +132,14 @@ class RandomCrop(object):
 
         image = image[top: top + new_h,
                       left: left + new_w]
-        print image.shape
-        #landmarks = landmarks - [left, top]
-        print new_h
-        print new_w
-        print top
-        print left
+        new_landmarks = []
         for i in range(len(landmarks)/2):
             x = (landmarks[2*i] * 48 + 48) - left
             y = (landmarks[2*i+1] * 48 + 48) - top
-
-            landmarks[2*i] = (x - 48)/48 
-            landmarks[2*i+1] = (y-48)/48 
-
-        return {'image': image, 'landmarks': landmarks}
+            if x < 96 and y < 96:
+                new_landmarks.append((x - 48)/48) 
+                new_landmarks.append((y- 48)/48) 
+        return {'image': image, 'landmarks': torch.DoubleTensor(new_landmarks)}
 
 
 class ToTensor(object):
@@ -183,12 +177,12 @@ if __name__== "__main__":
         scale = Rescale(30)
         #crop = RandomCrop(50)
         composed = transforms.Compose([
-                                       FlipHorizontal(),Rescale(200),ToTensor()])
+                                       FlipHorizontal(),Rescale(192),RandomCrop(96)])
 
 
         fig = plt.figure()
         sample = face_dataset[65]
-        for i, tsfrm in enumerate([none_t,horiz,scale]):
+        for i, tsfrm in enumerate([none_t,horiz,scale,composed]):
             copy_sample = copy.deepcopy(sample)
             copy_sample['image'] = copy_sample['image'].reshape(96, 96)
             transformed_sample = tsfrm(copy_sample)

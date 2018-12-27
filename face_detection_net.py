@@ -58,12 +58,14 @@ def adjust_learning_rate(optimizer, epoch,init_lr=utils.LEARNING_RATE,init_momen
 
 def Net_Train(net,cols=None,target_pt_fn=None,flip_indices=None, num_output_units=30):
 
+    #composed = transforms.Compose([FlipHorizontal(flip_indices=flip_indices),Rescale(192),RandomCrop(96)])
+    composed = FlipHorizontal(flip_indices=flip_indices)
     face_dataset = FaceLandmarksDataset(csv_file=utils.FTRAIN,
                                         root_dir='data/faces/',cols=cols)
 
     face_datase_trans = FaceLandmarksDataset(csv_file=utils.FTRAIN,
                                         root_dir='data/faces/',
-                                        transform=FlipHorizontal(flip_indices=flip_indices),cols=cols)
+                                        transform=composed,cols=cols)
 
     criterion = nn.MSELoss(reduction='sum')
     optimizer = optim.SGD(net.parameters(), lr=utils.LEARNING_RATE, momentum=0.9)
@@ -77,26 +79,17 @@ def Net_Train(net,cols=None,target_pt_fn=None,flip_indices=None, num_output_unit
         if utils.ADJUST_LEARNING_RATE==1:
             lr, momentum = adjust_learning_rate(optimizer,epoch,init_lr=lr,init_momentum=momentum)
         for i, data in enumerate(face_dataset):
+            # zero the parameter gradients
+            optimizer.zero_grad()
             # get the inputs
             #inputs, labels = data
             if utils.ALLOW_TRANSFORMS==1 and random.randint(0,1) == 1:
                 data = face_datase_trans[i]
-            # zero the parameter gradients
-            optimizer.zero_grad()
-
             # forward + backward + optimize
             resized_input = data['image'].reshape(-1, 1, 96, 96)
             _tensor = torch.from_numpy(resized_input)
-
             outputs = net(_tensor)
             resized_exp = torch.from_numpy(data['landmarks']).reshape(1,num_output_units)
-            if utils.DEBUG==1:
-                print (outputs)
-                print (outputs.shape)
-                print (outputs.dtype)
-                print (resized_exp)
-                print (resized_exp.shape)
-                print (resized_exp.dtype)
             loss = criterion(outputs, resized_exp)
             loss.backward()
             optimizer.step()
