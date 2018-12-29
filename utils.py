@@ -76,7 +76,7 @@ SPECIALIST_SETTINGS = [
 
 
 
-EPOCHS = 300
+EPOCHS = 50
 FTRAIN = 'data/face_kps/training.csv'
 FTEST = 'data/face_kps/test.csv'
 MODEL = 'data/weights.pt'

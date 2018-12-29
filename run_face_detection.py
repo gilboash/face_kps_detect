@@ -50,7 +50,7 @@ with torch.no_grad():
         this_output = outputs.numpy() 
         numpy_out =  this_output[0] * 48 + 48
         numpy_out = numpy_out.clip(0, 96)
-        output_list.append(this_output[0])
+        output_list.append(numpy_out)
         if plot_index<16:   
             ax = fig.add_subplot(4, 4,plot_index+ 1, xticks=[], yticks=[])
             with torch.no_grad():
